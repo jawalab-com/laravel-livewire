@@ -7,6 +7,7 @@ use App\Concerns\HasTeams;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -16,6 +17,9 @@ use Illuminate\Support\Str;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
+use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property int $id
@@ -40,7 +44,21 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasTeams, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+    use HasFactory, HasRoles, HasTeams, LogsActivity, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable {
+        HasTeams::teams insteadof HasRoles;
+        HasRoles::teams as permissionTeams;
+    }
+
+    /**
+     * Get the activitylog options for the user.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'email'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -66,5 +84,23 @@ class User extends Authenticatable implements PasskeyUser
         return Str::length($initials) > 1
             ? Str::substr($initials, 0, 1).Str::substr($initials, -1)
             : $initials;
+    }
+
+    /**
+     * Get a query builder for the user's notifications.
+     *
+     * @return Builder<Notification>
+     */
+    public function notificationsQuery(): Builder
+    {
+        return Notification::query()->where('user_id', $this->id);
+    }
+
+    /**
+     * Get the number of unread notifications for the user.
+     */
+    public function unreadNotificationsCount(): int
+    {
+        return $this->notificationsQuery()->unread()->count();
     }
 }

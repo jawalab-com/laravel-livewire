@@ -10,19 +10,47 @@
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
 
-            <livewire:team-switcher />
+            {{-- Intentionally hidden for future use --}}
+            {{-- <livewire:team-switcher /> --}}
+
+            <div class="flex items-center justify-between px-3 max-lg:hidden">
+                <flux:text variant="subtle" class="text-sm">v1.0.0</flux:text>
+                <livewire:notification-dropdown />
+            </div>
 
             <flux:sidebar.nav>
                 <flux:sidebar.group :heading="__('Platform')" class="grid">
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
+
+                    @can('viewAny', App\Models\User::class)
+                        <flux:sidebar.item icon="users" :href="route('users.index')" :current="request()->routeIs('users.*')" wire:navigate>
+                            {{ __('Users') }}
+                        </flux:sidebar.item>
+                    @endcan
+
+                    @can('viewAny', Spatie\Permission\Models\Role::class)
+                        <flux:sidebar.item icon="shield-check" :href="route('roles.index')" :current="request()->routeIs('roles.*')" wire:navigate>
+                            {{ __('Roles') }}
+                        </flux:sidebar.item>
+                    @endcan
+
+                    @can('viewAny', Spatie\Activitylog\Models\Activity::class)
+                        <flux:sidebar.item icon="clipboard-document-list" :href="route('audit-logs.index')" :current="request()->routeIs('audit-logs.*')" wire:navigate>
+                            {{ __('Audit Logs') }}
+                        </flux:sidebar.item>
+                    @endcan
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 
             <flux:spacer />
 
             <flux:sidebar.nav>
+                <flux:sidebar.item icon="code-bracket" :href="route('developer.notification')" :current="request()->routeIs('developer.*')" wire:navigate>
+                    {{ __('Developer') }}
+                </flux:sidebar.item>
+
                 <flux:sidebar.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
                     {{ __('Repository') }}
                 </flux:sidebar.item>
@@ -40,6 +68,8 @@
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
             <flux:spacer />
+
+            <livewire:notification-dropdown />
 
             <flux:dropdown position="top" align="end">
                 <flux:profile
